@@ -1,0 +1,27 @@
+{
+    "name": "mzprog/datatables",
+    "description": "simple laravel/livewire datatable easy to use",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohamad Zbib",
+            "email": "mz32programmer@gmail.com"
+        }
+    ],
+    "require": {
+        "livewire/livewire": "^2.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mzprog\\Datatables\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mzprog\\Datatables\\DatatablesServiceProvider"
+            ]
+        }
+    }
+}
