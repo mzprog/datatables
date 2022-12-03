@@ -15,6 +15,7 @@ abstract class Datatable extends Component
 {
     use WithPagination;
     protected $paginationTheme;
+    public $theme;
     public int $pageLength;
 
     // order
@@ -27,10 +28,16 @@ abstract class Datatable extends Component
 
     abstract public function query() : Builder;
 
+    public function mount()
+    {
+        $this->pageLength = $this->pageLength ?? Config::get('datatables.page-length');
+        // we need to fix the reapeated code, in mount and boot, it's fine for now
+        $this->theme = $this->theme ?? Config::get('datatables.theme');
+    }
     public function boot()
     {
-        $this->paginationTheme = Config::get('datatables.theme');
-        $this->pageLength = Config::get('datatables.page-length');
+        // protected value will not be saved every request
+        $this->paginationTheme = $this->theme ?? Config::get('datatables.theme'); 
     }
 
     /**
