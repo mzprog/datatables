@@ -68,3 +68,64 @@ the callback parameter are: the query `Builder`, and the order direction, exampl
 
     Column::name('actions')->raw()
         ->edit(fn($row) => '<a href="' . route('users.show',['user' => $row->id]) . '" >View</a>';
+
+
+### Filter Class
+
+If you want to select one or more value as a filter, like you only need to see rows from today, you can use:
+
+    public function filters()
+	{
+		return [
+            Filter::name('date', 'Select a Date'),
+        ];
+    }
+
+this will let you filter from your table using `date` column, also you can skip the label name, by defualt it will be `Date`.
+
+also you can use custom data and filters:
+
+example 1 (if you want to filter by name first letter):
+
+    Filter::name('name')->options(function () {
+        $options = User::query()
+            ->select([
+                DB::raw('LEFT(name,1) as letter'),
+                DB::raw('COUNT(*) as total')
+            ])->groupBy('letter')->get();
+
+        return $options->map(fn ($d) => [
+            'value' => $d['letter'],
+            'name' => "Starts with '{$d['letter']}'",
+            'total' => $d['total'],
+        ])->toArray();
+    })
+    ->filter(function (Builder $query, array $values) {
+        $query->whereIn(DB::raw('LEFT(name,1)'), $values);
+    })
+
+for `options` you need to return array of options, and option has (name, value, total).
+
+`filter` if this filter is selected you can add conditions to the provided query, and you will get also array of the selected values.
+
+example 2(filter by success: success, fail)
+
+    Filter::name('success')->options(function () {
+        return [
+            [
+                'name' => 'Success',
+                'value' => '>=',
+                'total' => Exam::where('points', ">=", 50)->count()
+            ],
+            [
+                'name' => 'Fail',
+                'value' => '<',
+                'total' => Exam::where('points', "<", 50)->count()
+            ],
+        ];
+    })
+    ->filter(function (Builder $query, array $values) {
+        if(count($values) ==2) return;
+        $val = current($values);
+        $query->whereIn('points', $val, 50);
+    })
