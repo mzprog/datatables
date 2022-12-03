@@ -49,6 +49,23 @@
         </svg>
     </div>
     <div class="row">
+        @foreach ($filters as $filter)
+            <div class="col-3">
+                <label for="{{$filter['name']}}">{{$filter['label']}}</label>
+                <select name="{{$filter['name']}}"
+                    wire:model="filtersData.{{$filter['name']}}"
+                    class="custom-select" multiple
+                >
+                    @foreach ($filter['options'] as $opt)
+                        <option value="{{$opt['value']}}">
+                            {{$opt['name']}} - ({{$opt['total']}})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endforeach
+    </div>
+    <div class="row">
         @if ($hasSearch)
         <div class="col-3 offset-9">
             <input type="text" class="w-100" wire:model="search"

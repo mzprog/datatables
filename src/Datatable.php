@@ -4,6 +4,7 @@ namespace Mzprog\Datatables;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\View;
 use Livewire\Component;
@@ -22,6 +23,7 @@ abstract class Datatable extends Component
 
     // filter
     public string $search = "";
+    public array $filtersData = [];
 
     abstract public function query() : Builder;
 
@@ -81,12 +83,18 @@ abstract class Datatable extends Component
         }
     }
 
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
     protected function getData()
     {
         $query = $this->query();
 
         $this->doOrder($query);
         $this->doSearch($query);
+        $this->doFilters($query);
 
         /** @var LengthAwarePaginator $data */
         $data = $query->paginate($this->pageLength);
@@ -103,16 +111,54 @@ abstract class Datatable extends Component
         return $data;
     }
 
+    public function getFilters()
+    {
+        if( ! method_exists($this, 'filters')){
+            return [];
+        }
+        
+        /** @var Collection $filtersSetup */
+        $filtersSetup = collect($this->filters());
+
+        $filters = $filtersSetup->map(function(Filter $f){
+            $f->setQuery($this->query());
+
+            return [
+                'name' => $f->name,
+                'label' => $f->label,
+                'options' => $f->getOptions()
+            ];
+        })
+        ->filter(fn($f) => count($f['options'])  > 1 )
+        ->values();
+        
+        return $filters;
+    }
+
+    public function doFilters(Builder $query)
+    {
+        /** @var Collection $filtersSetup */
+        $filtersSetup = collect($this->filters());
+
+        $filtersSetup->each(function(Filter $f) use ($query) {
+            if(array_key_exists($f->name, $this->filtersData)){
+                $f->doFilter($query, $this->filtersData[$f->name]);
+            }
+        });
+    }
+
     public function render()
     {
         $columns = collect($this->columns())->map(fn($c) => $c->toArray())->toArray();
         $data = $this->getData();
         $hasSearch =  collect($columns)->filter(fn($c) => $c['searchable'])->count()>0;
+        $filters = $this->getFilters();
       
         return View::make('datatables::datatable-bs',[
             'columns' => $columns,
             'data' => $data,
             'hasSearch' => $hasSearch,
+            'filters' => $filters,
         ]);
     }
 }
